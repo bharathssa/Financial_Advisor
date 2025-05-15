@@ -210,7 +210,7 @@ def main():
         st.pyplot(fig1)
 
         st.subheader("📉 Post-Retirement Corpus Drawdown")
-        fig2, ax2 = plt.subplots(figsize=(10, 4))
+        fig2, ax2 = plt.subplots(figsize=(10, 5))
         ax2.plot(df_post['Age'], df_post['Remaining Corpus'], label='Remaining Corpus', color='tab:red')
         ax2.set_xlabel("Age")
         ax2.set_ylabel("NZD")
