@@ -12,7 +12,7 @@ def main():
 
     st.set_page_config(page_title="Emily's Retirement Planner", layout="wide")
 
-    st.title("\U0001F4BC Emily's Superannuation Fund & Retirement Planner")
+    st.title("\U0001F4BC Superannuation Fund & Retirement Planner")
     st.markdown("""
     This app simulates the accumulation and drawdown of superannuation for retirement planning. Adjust the settings below to customize the forecast.
     """)
