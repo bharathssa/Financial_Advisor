@@ -31,7 +31,7 @@ This project simulates:
 
 | Pre-Retirement Fund Growth | Corpus Distribution |
 |----------------------------|---------------------|
-| ![Chart](images/fund_growth.png) | ![Histogram](images/corpus_distribution.png) |
+| ![Chart](images/fund_growth.png) | ![Histogram]([images/corpus_distribution.png](https://github.com/bharathssa/Financial_Advisor/blob/main/images/corpus%20distribution.png)) |
 
 ---
 
