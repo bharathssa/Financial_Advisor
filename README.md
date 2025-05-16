@@ -1,8 +1,8 @@
-# 💼 Financial Advisor – Retirement Planning Simulator
+# 💼 Financial Advisor – Retirement Planning Simulator - New Zealand
 
 **Financial Advisor** is an interactive simulation tool built using Python and Streamlit to help individuals plan and visualize their financial future—before and after retirement.
 
-![Financial Advisor Screenshot](images/dashboard_sample.png)
+![Financial Advisor Screenshot](https://github.com/bharathssa/Financial_Advisor/blob/main/images/dasboard%20table%20view.png?raw=true)
 
 ---
 
@@ -31,7 +31,7 @@ This project simulates:
 
 | Pre-Retirement Fund Growth | Corpus Distribution |
 |----------------------------|---------------------|
-| ![Chart](images/fund_growth.png) | ![Histogram](images/corpus_distribution.png) |
+| ![Chart](https://github.com/bharathssa/Financial_Advisor/blob/main/images/Pre%20retirement%20growth.png?raw=true) | ![Histogram](https://github.com/bharathssa/Financial_Advisor/blob/main/images/corpus%20distribution.png?raw=true) |
 
 ---
 
