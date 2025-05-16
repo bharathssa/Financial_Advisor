@@ -2,7 +2,7 @@
 
 **Financial Advisor** is an interactive simulation tool built using Python and Streamlit to help individuals plan and visualize their financial future—before and after retirement.
 
-![Financial Advisor Screenshot](images/dashboard_sample.png)
+![Financial Advisor Screenshot]([images/dashboard_sample.png](https://github.com/bharathssa/Financial_Advisor/blob/main/images/dasboard%20table%20view.png))
 
 ---
 
