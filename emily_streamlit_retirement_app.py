@@ -143,8 +143,7 @@ def main():
         all_ages = pd.DataFrame({"Age": list(range(30, 66))})
         combined_summary = all_ages.merge(combined_summary, on="Age", how="left")
 
-        st.subheader("\U0001F4C8 Summary Statistics Across All Simulations")
-        st.dataframe(combined_summary)
+        
 
         # Use full data to calculate total contribution mean across all ages
         total_contributions = long_df.groupby("Simulation")["Total Contribution"].sum().mean()
@@ -231,6 +230,9 @@ def main():
 
         st.pyplot(fig_dist)
 
+# Summary Statistics Across All Simulations
+        st.subheader("\U0001F4C8 Summary Statistics Across All Simulations")
+        st.dataframe(combined_summary)
 
 # Fund Growth Visualization
         st.subheader("\U0001F4C8 Pre-Retirement Fund Growth")
