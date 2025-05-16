@@ -66,6 +66,7 @@ def main():
                 allocation_blocks.append({"end": end_year, "weights": allocation})
 
     apply_clicked = st.button("\U0001F680 Apply and Run Simulation")
+    
 # Pre retirement simulation
 
     if apply_clicked:
@@ -180,7 +181,7 @@ def main():
         col1.metric("Total Investment", f"${total_contributions:,.0f}" if not np.isnan(total_contributions) else "N/A")
         col2.metric("Total Profit", f"${total_profit:,.0f}" if not np.isnan(total_profit) else "N/A")
         col3.metric("Corpus at Retirement", f"${corpus_at_retirement:,.0f}" if not np.isnan(corpus_at_retirement) else "N/A")
-        col4.metric("Total_exp_corpus", f"${total_exp_corpus : ,.0f}")
+        col4.metric("Total Expected corpus", f"${total_exp_corpus : ,.0f}")
         col5.metric("Decision Status", f"{Decision_Status_YesorNo}")
 
  # ------------------- Normal Distribution of Corpus ------------------- #
@@ -230,9 +231,7 @@ def main():
 
         st.pyplot(fig_dist)
 
-# Summary Statistics Across All Simulations
-        st.subheader("\U0001F4C8 Summary Statistics Across All Simulations")
-        st.dataframe(combined_summary)
+
 
 # Fund Growth Visualization
         st.subheader("\U0001F4C8 Pre-Retirement Fund Growth")
@@ -256,6 +255,7 @@ def main():
         ax2.grid(True)
         st.pyplot(fig2)
 
+
         # Fund Returns Distribution
         st.subheader("\U0001F4CA Fund Returns Distribution")
         fig3, ax3 = plt.subplots(figsize=(10, 5))
@@ -266,7 +266,11 @@ def main():
         plt.xticks(rotation=30)
         st.pyplot(fig3)
 
-        # Pre and Post Retirement Tables
+# Summary Statistics Across All Simulations
+        st.subheader("\U0001F4C8 Summary Statistics Across All Simulations")
+        st.dataframe(combined_summary)
+
+# Pre and Post Retirement Tables
         st.subheader("\U0001F4CB Detailed Pre-Retirement Summary")
         st.dataframe(df_pre.reset_index(drop=True))
 
