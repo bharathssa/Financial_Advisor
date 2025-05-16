@@ -1,4 +1,4 @@
-# 💼 Financial Advisor – Retirement Planning Simulator
+# 💼 Financial Advisor – Retirement Planning Simulator - New Zealand
 
 **Financial Advisor** is an interactive simulation tool built using Python and Streamlit to help individuals plan and visualize their financial future—before and after retirement.
 
