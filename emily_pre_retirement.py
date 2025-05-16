@@ -26,7 +26,7 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
                                    contribution_increase_years, contribution_increase_amount, contribution_max,
                                    lump_sum_amount, lump_sum_frequency, start_lump_sum_year, years,
                                    start_age, acc_levy, inflation_rate, marginal_tax_rate, tax_brackets, growth_rates,
-                                   allocation_blocks, has_partner='Auto', has_children='Auto', invested_real_estate='Auto',
+                                   allocation_blocks, has_partner='Auto', partner_contribution_perc = 'Auto', has_children='Auto', invested_real_estate='Auto',
                                    double_promotion_year=None, unforeseen_withdrawal_years=None):
 
     # --- Handle user-specified or probabilistic life events ---
@@ -52,6 +52,7 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
         home_buy_year = 10 if invested_real_estate == "Yes" else years + 1
 
     partner_status = ["Yes" if year >= partner_year else "No" for year in range(1, years + 1)]
+    partner_contribution_perc = partner_contribution_perc
     child_status = ["Yes" if year >= child_year else "No" for year in range(1, years + 1)]
 
     rent_base = 0.25
@@ -72,6 +73,11 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
     prev_salary = None
     owns_home = False
 
+    child_start_age = child_year
+    child_duration = 18
+    base_child_cost = 12000
+    child_expenses = []
+
     records = []
 
     for year in range(1, years + 1):
@@ -89,13 +95,20 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
         employer_contrib = min(0.03, contrib_rate) * net_salary
         total_contrib = emp_contrib + employer_contrib
 
+        if child_start_age <= age < child_start_age + child_duration:
+            inflation_factor = (1 + inflation_rate) ** (age - child_start_age)
+            child_expense = base_child_cost * inflation_factor
+        else:
+            child_expense = 0
+        child_expenses.append(child_expense)
+
         lump_sum = 0
-        if year >= start_lump_sum_year and (year - start_lump_sum_year + 1) % lump_sum_frequency == 0:
+        if year >= start_lump_sum_year and (year - start_lump_sum_year+1) % lump_sum_frequency == 0:
             lump_sum = lump_sum_amount
             total_contrib += lump_sum
 
         if partner_status[year - 1] == "Yes":
-            partner_contrib = salary * 0.03
+            partner_contrib = salary * partner_contribution_perc
             total_contrib += partner_contrib
 
         if child_status[year - 1] == "Yes":
@@ -176,7 +189,10 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
         leisure = net_salary * leisure_base * inflation_factor
         misc = net_salary * misc_base * inflation_factor
 
-        total_spent = rent + groceries + travel + utilities + insurance + leisure + misc
+        child_exp = child_expenses[year - 1] if (year - 1) < len(child_expenses) else 0
+
+        total_spent = rent + groceries + travel + utilities + insurance + leisure + misc + child_exp
+
 
         records.append({
             
