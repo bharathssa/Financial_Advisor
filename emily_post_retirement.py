@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-
 def simulate_post_retirement(
     corpus,
     start_age,
@@ -20,8 +19,7 @@ def simulate_post_retirement(
     nz_super_2060 = nz_super_annuity * ((1 + inflation) ** accumulation_years)
 
     for i in range(1, years + 1):
-        year = accumulation_years + i
-        age = start_age + year - 1
+        age = start_age + i - 1  # ✅ Correct age progression
 
         desired_withdrawal = lifestyle_2060 * ((1 + inflation) ** (i - 1))
         govt_support = nz_super_2060 * ((1 + inflation) ** (i - 1))
@@ -32,7 +30,7 @@ def simulate_post_retirement(
         corpus = corpus + growth - withdrawal
 
         data.append({
-            "Post-Retirement Year": year,
+            "Post-Retirement Year": i,
             "Age": age,
             "Target Lifestyle Spending": round(desired_withdrawal, 2),
             "Target Spending % of Corpus": round((desired_withdrawal / corpus) * 100, 2) if corpus > 0 else 0,
