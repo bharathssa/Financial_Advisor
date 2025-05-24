@@ -158,7 +158,7 @@ def main():
 #Post retirement simulation
         df_post = simulate_post_retirement(
             corpus=corpus_at_retirement,
-            start_age=65,
+            start_age=66,
             years= expected_life_expectancy-65,
             return_mean=return_mean,
             return_std=return_std,
