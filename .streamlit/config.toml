@@ -2,4 +2,5 @@
 address = "localhost"
 port = 8501
 headless = true
+enableXsrfProtection = false
 enableCORS = false
