@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "emily_streamlit_retirement_app.py"]
+CMD ["python3", "-m", "streamlit", "run", "emily_streamlit_retirement_app.py"]
+
