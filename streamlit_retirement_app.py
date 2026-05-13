@@ -245,6 +245,19 @@ def main():
                 add_more = st.checkbox("Add another withdrawal?", key=f"add_withdraw_{year}")
 
         with st.expander("🧾 Post-Retirement Inputs", expanded=False):
+            retirement_spending_source = st.radio(
+                "Retirement Spending Basis",
+                ["Use age-65 spending from simulation", "Use manual lifestyle input"],
+                index=0,
+            )
+            retirement_spending_ratio = st.slider(
+                "Retirement Spending % of Age-65 Expenses",
+                0.40,
+                1.10,
+                0.70,
+                0.05,
+                disabled=retirement_spending_source == "Use manual lifestyle input",
+            )
             lifestyle_base_today = st.number_input("Current Lifestyle Spending (NZD)", value=70000, step=1000)
             lifestyle_improvement_pct = st.slider("Lifestyle Improvement %", 0.0, 1.0, 0.40, 0.01)
             nz_super_annuity = st.number_input("NZ Super Today (NZD)", value=23000, step=1000)
@@ -313,6 +326,8 @@ def main():
         long_df, corpus_percentiles = build_aggregate_summary(df_list)
 
         total_contributions = long_df.groupby("Simulation")["Total Contribution"].sum().mean()
+        age_65_spending = long_df.loc[long_df["Age"] == 65].groupby("Simulation")["Total Spent"].last()
+        median_age_65_spending = age_65_spending.median()
         final_corpuses = [df["Adjusted Fund Value"].iloc[-1] for df in df_list]
         mean_corpus = np.mean(final_corpuses)
         median_corpus = np.median(final_corpuses)
@@ -322,6 +337,12 @@ def main():
         retirement_corpus_mean = corpus_percentiles.loc[corpus_percentiles["Age"] == 65, "median"].squeeze()
         corpus_at_retirement = retirement_corpus_mean if pd.notna(retirement_corpus_mean) else mean_corpus
         total_profit = corpus_at_retirement - total_contributions if pd.notna(corpus_at_retirement) else np.nan
+        use_linked_retirement_spending = retirement_spending_source == "Use age-65 spending from simulation"
+        retirement_lifestyle_start = None
+        spending_basis = "Manual lifestyle input"
+        if use_linked_retirement_spending and pd.notna(median_age_65_spending):
+            retirement_lifestyle_start = median_age_65_spending * retirement_spending_ratio
+            spending_basis = f"{retirement_spending_ratio:.0%} of median modeled age-65 spending"
 
         df_post = simulate_post_retirement(
             corpus=corpus_at_retirement,
@@ -334,6 +355,8 @@ def main():
             lifestyle_improvement_pct=lifestyle_improvement_pct,
             nz_super_annuity=nz_super_annuity,
             accumulation_years=35,
+            lifestyle_at_retirement=retirement_lifestyle_start,
+            spending_basis=spending_basis,
         )
 
         total_fund_withdrawal = df_post["Withdrawal from Fund"].sum()
@@ -351,15 +374,17 @@ def main():
         c5.metric("Retirement Sufficiency", f"{sufficiency_score}%")
 
         st.markdown("---")
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         c1.metric("Estimated Total Contributions", format_currency(total_contributions))
         c2.metric("Expected Corpus at Retirement", format_currency(corpus_at_retirement))
-        c3.metric("Required Fund", format_currency(required_fund))
-        c4.metric("Shortfall Probability", f"{shortfall_probability:.1f}%")
+        c3.metric("Median Age-65 Spending", format_currency(median_age_65_spending))
+        c4.metric("Starting Retirement Lifestyle", format_currency(df_post["Target Lifestyle Spending"].iloc[0]))
+        c5.metric("Shortfall Probability", f"{shortfall_probability:.1f}%")
 
         if total_fund_withdrawal > 0:
             st.markdown(
                 f"""
+- **Retirement spending basis:** {spending_basis}  
 - **Expected fund withdrawal need:** {format_currency(total_fund_withdrawal)}  
 - **5th percentile corpus:** {format_currency(p5)}  
 - **95th percentile corpus:** {format_currency(p95)}  
@@ -378,7 +403,8 @@ def main():
             "### What the charts are telling you"
             "\n- The median path shows the most typical corpus build-up by age 65."
             "\n- The shaded risk band shows downside and upside outcomes across 1,000 simulations."
-            "\n- Retirement Sufficiency measures whether the age-65 corpus can support the modeled retirement withdrawal profile, not just whether the year-65 balance equals that year’s annual spending."
+            "\n- Retirement Sufficiency measures whether the age-65 corpus can support the modeled retirement withdrawal profile after NZ Super, not just whether the balance equals one year of spending."
+            "\n- Post-retirement lifestyle spending now starts from the selected spending basis, so it no longer resets unexpectedly at age 66."
             "\n- Wide return distributions imply higher volatility, while narrow boxes suggest more stable funds."
         )
 
@@ -413,8 +439,7 @@ def main():
             st.pyplot(fig_cashflow)
             st.markdown(
                 "Compare net salary, total contributions, portfolio value, and total expenses. The portfolio value line shows how invested capital grows compared to spending. "
-                "Note: this expense line is an annual spending requirement, while portfolio value is the total accumulated balance. A year where expenses appear higher than portfolio value is a warning sign, not a direct one-to-one comparison, because retirement income also depends on NZ Super and future returns. "
-                "It is possible under aggressive inflation and lifestyle assumptions for age-65 annual spending to reach several million NZD, even though the retirement corpus at 65 may be lower. The key question is whether that corpus can sustain the modeled withdrawal path."
+                "The expense line is an annual spending requirement, while portfolio value is the total accumulated balance. The post-retirement model can use a selected percentage of age-65 expenses to reflect a realistic retirement downshift."
             )
 
         bottom_left, bottom_right = st.columns(2)
@@ -483,6 +508,10 @@ def main():
         if total_fund_withdrawal > corpus_at_retirement:
             st.markdown(
                 "- The required withdrawal amount exceeds expected corpus, so the plan is at risk and should be adjusted."
+            )
+        if use_linked_retirement_spending:
+            st.markdown(
+                f"- Retirement spending starts at {format_currency(df_post['Target Lifestyle Spending'].iloc[0])}, based on {retirement_spending_ratio:.0%} of the modeled age-65 spending."
             )
 
         st.markdown("---")

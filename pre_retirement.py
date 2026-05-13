@@ -55,25 +55,30 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
     partner_contribution_perc = partner_contribution_perc
     child_status = ["Yes" if year >= child_year else "No" for year in range(1, years + 1)]
 
-    rent_base = 0.25
-    groceries_base = 0.15
-    travel_base = 0.10
-    utilities_base = 0.05
-    insurance_base = 0.05
-    leisure_base = 0.10
-    misc_base = 0.05
+    expense_rates = {
+        "Rent": 0.25,
+        "Groceries": 0.15,
+        "Travel": 0.10,
+        "Utilities": 0.05,
+        "Insurance": 0.05,
+        "Leisure": 0.10,
+        "Misc": 0.05,
+    }
 
     rent_upgrade_2y = 0.10
     rent_upgrade_5y = 0.15
     lifestyle_upgrade = 0.12
+    rent_multiplier = 1.0
+    lifestyle_multiplier = 1.0
 
     salary = initial_salary
     corpus = 0
     foreign_corpus = 0
     prev_salary = None
     owns_home = False
+    expense_base_amounts = None
 
-    child_start_age = child_year
+    child_start_age = start_age + child_year - 1
     child_duration = 18
     base_child_cost = 12000
     child_expenses = []
@@ -86,6 +91,11 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
         current_record_withdrawal = 0
 
         age = start_age + year - 1
+        promotion_bonus = 0
+        if double_promotion_year is not None and year == double_promotion_year:
+            salary *= 2
+            promotion_bonus = 10000
+
         tax = calculate_tax(salary, tax_brackets, year, inflation_rate)
         acc = acc_levy * salary
         net_salary = salary - tax - acc
@@ -107,6 +117,10 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
             lump_sum = lump_sum_amount
             total_contrib += lump_sum
 
+        if promotion_bonus:
+            lump_sum += promotion_bonus
+            total_contrib += promotion_bonus
+
         if partner_status[year - 1] == "Yes":
             partner_contrib = salary * partner_contribution_perc
             total_contrib += partner_contrib
@@ -119,10 +133,6 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
         if year == home_buy_year:
             corpus -= 60000  # downpayment
             owns_home = True
-
-        if double_promotion_year is not None and year == double_promotion_year:
-            salary *= 2
-            lump_sum += 10000
 
         if unforeseen_withdrawal_years and year in unforeseen_withdrawal_years:
             if isinstance(unforeseen_withdrawal_years, dict):
@@ -167,27 +177,28 @@ def simulate_pre_retirement(initial_salary, hike_rate_mean, hike_rate_std, contr
 
         inflation_factor = (1 + inflation_rate) ** (year - 1)
 
+        if expense_base_amounts is None:
+            expense_base_amounts = {
+                category: net_salary * rate
+                for category, rate in expense_rates.items()
+            }
+
         if not owns_home:
             if year % 2 == 0:
-                rent_base *= (1 + rent_upgrade_2y)
+                rent_multiplier *= (1 + rent_upgrade_2y)
             if year % 5 == 0:
-                rent_base *= (1 + rent_upgrade_5y)
+                rent_multiplier *= (1 + rent_upgrade_5y)
 
         if year % 5 == 0:
-            groceries_base *= (1 + lifestyle_upgrade)
-            travel_base *= (1 + lifestyle_upgrade)
-            utilities_base *= (1 + lifestyle_upgrade)
-            insurance_base *= (1 + lifestyle_upgrade)
-            leisure_base *= (1 + lifestyle_upgrade)
-            misc_base *= (1 + lifestyle_upgrade)
+            lifestyle_multiplier *= (1 + lifestyle_upgrade)
 
-        rent = 0 if owns_home else net_salary * rent_base * inflation_factor
-        groceries = net_salary * groceries_base * inflation_factor
-        travel = net_salary * travel_base * inflation_factor
-        utilities = net_salary * utilities_base * inflation_factor
-        insurance = net_salary * insurance_base * inflation_factor
-        leisure = net_salary * leisure_base * inflation_factor
-        misc = net_salary * misc_base * inflation_factor
+        rent = 0 if owns_home else expense_base_amounts["Rent"] * inflation_factor * rent_multiplier
+        groceries = expense_base_amounts["Groceries"] * inflation_factor * lifestyle_multiplier
+        travel = expense_base_amounts["Travel"] * inflation_factor * lifestyle_multiplier
+        utilities = expense_base_amounts["Utilities"] * inflation_factor * lifestyle_multiplier
+        insurance = expense_base_amounts["Insurance"] * inflation_factor * lifestyle_multiplier
+        leisure = expense_base_amounts["Leisure"] * inflation_factor * lifestyle_multiplier
+        misc = expense_base_amounts["Misc"] * inflation_factor * lifestyle_multiplier
 
         child_exp = child_expenses[year - 1] if (year - 1) < len(child_expenses) else 0
 
