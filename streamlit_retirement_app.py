@@ -339,7 +339,7 @@ def main():
         total_fund_withdrawal = df_post["Withdrawal from Fund"].sum()
         shortfall_probability = np.mean(np.array(final_corpuses) < total_fund_withdrawal) * 100
         sufficiency_score = int(min(100, 100 * corpus_at_retirement / total_fund_withdrawal)) if total_fund_withdrawal > 0 else 100
-        funding_status = "Sufficient" if corpus_at_retirement >= total_fund_withdrawal else "At Risk"
+        funding_status = "Sufficient" if sufficiency_score >= 80 else "At Risk"
 
         required_fund = total_fund_withdrawal
         st.subheader("📊 Retirement Summary")
