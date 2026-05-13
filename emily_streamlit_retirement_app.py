@@ -121,7 +121,8 @@ def plot_cashflow(df_pre):
 
 
 def plot_funding_gauge(score, corpus, required):
-    fig, ax = plt.subplots(figsize=(5, 3))
+    fig, ax = plt.subplots(figsize=(4, 2.2))
+    fig.subplots_adjust(top=0.85, bottom=0.12, left=0.05, right=0.98)
     ax.axis("off")
 
     segments = [
@@ -359,6 +360,8 @@ def main():
             st.markdown(
                 f"""
 - **Expected fund withdrawal need:** {format_currency(total_fund_withdrawal)}  
+- **5th percentile corpus:** {format_currency(p5)}  
+- **95th percentile corpus:** {format_currency(p95)}  
 - **Shortfall probability:** {shortfall_probability:.1f}%  
 - **Recommended action:** increase savings or lower spending if your sufficiency score is below 80%.
 """
