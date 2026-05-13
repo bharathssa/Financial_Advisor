@@ -339,7 +339,7 @@ def main():
         total_fund_withdrawal = df_post["Withdrawal from Fund"].sum()
         shortfall_probability = np.mean(np.array(final_corpuses) < total_fund_withdrawal) * 100
         sufficiency_score = int(min(100, 100 * corpus_at_retirement / total_fund_withdrawal)) if total_fund_withdrawal > 0 else 100
-        funding_status = "Sufficient" if df_post["Remaining Corpus"].min() >= 0 else "At Risk"
+        funding_status = "Sufficient" if sufficiency_score >= 80 and df_post["Remaining Corpus"].min() >= 0 else "At Risk"
 
         required_fund = total_fund_withdrawal
         st.subheader("📊 Retirement Summary")
@@ -364,7 +364,7 @@ def main():
 - **5th percentile corpus:** {format_currency(p5)}  
 - **95th percentile corpus:** {format_currency(p95)}  
 - **Shortfall probability:** {shortfall_probability:.1f}%  
-- **Recommended action:** increase savings or lower spending if your sufficiency score is below 80%.
+- **Recommended action:** increase savings or lower spending if your sufficiency score is below 80% or if the retirement corpus runs out after age 65.
 """
             )
         else:
@@ -378,7 +378,7 @@ def main():
             "### What the charts are telling you"
             "\n- The median path shows the most typical corpus build-up by age 65."
             "\n- The shaded risk band shows downside and upside outcomes across 1,000 simulations."
-            "\n- If your corpus band stays above your expected retirement withdrawals, the plan looks more resilient."
+            "\n- Retirement Sufficiency measures whether the age-65 corpus can support the modeled retirement withdrawal profile, not just whether the year-65 balance equals that year’s annual spending."
             "\n- Wide return distributions imply higher volatility, while narrow boxes suggest more stable funds."
         )
 
@@ -413,7 +413,8 @@ def main():
             st.pyplot(fig_cashflow)
             st.markdown(
                 "Compare net salary, total contributions, portfolio value, and total expenses. The portfolio value line shows how invested capital grows compared to spending. "
-                "A higher portfolio value relative to annual expenses is positive, but the retirement sufficiency score measures whether the projected age-65 corpus can cover the full modeled retirement withdrawal need."
+                "Note: this expense line is an annual spending requirement, while portfolio value is the total accumulated balance. A year where expenses appear higher than portfolio value is a warning sign, not a direct one-to-one comparison, because retirement income also depends on NZ Super and future returns. "
+                "It is possible under aggressive inflation and lifestyle assumptions for age-65 annual spending to reach several million NZD, even though the retirement corpus at 65 may be lower. The key question is whether that corpus can sustain the modeled withdrawal path."
             )
 
         bottom_left, bottom_right = st.columns(2)
