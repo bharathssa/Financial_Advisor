@@ -92,11 +92,64 @@ def plot_contribution_stack(df_pre):
     return fig
 
 
+def plot_cashflow(df_pre):
+    df = df_pre.copy()
+    expense_cols = ["Rent", "Groceries", "Travel", "Utilities", "Insurance", "Leisure", "Misc"]
+    df["Total Expenses"] = df[expense_cols].sum(axis=1)
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(df["Age"], df["Net Salary"], label="Net Salary", color="#2a6f97", linewidth=2)
+    ax.plot(df["Age"], df["Total Contribution"], label="Total Contribution", color="#ff8c42", linewidth=2)
+    ax.plot(df["Age"], df["Total Expenses"], label="Total Expenses", color="#8c2d04", linewidth=2)
+    ax.set_title("Net Cashflow, Savings and Expenses")
+    ax.set_xlabel("Age")
+    ax.set_ylabel("NZD")
+    ax.legend()
+    return fig
+
+
+def plot_allocation_evolution(normalized_blocks):
+    data = {"Age": [block["end"] for block in normalized_blocks]}
+    assets = list(normalized_blocks[0]["weights"].keys())
+    for asset in assets:
+        data[asset] = [block["weights"][asset] for block in normalized_blocks]
+    df = pd.DataFrame(data)
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    palette = ["#1b4f72", "#117a65", "#d35400", "#6c3483", "#1f618d"]
+    for asset, color in zip(assets, palette):
+        ax.plot(df["Age"], df[asset], marker="o", linewidth=2, label=asset, color=color)
+    ax.set_title("Selected Portfolio Allocation Over Time")
+    ax.set_xlabel("Year End")
+    ax.set_ylabel("Allocation Weight")
+    ax.set_ylim(0, 1)
+    ax.legend(loc="upper left", fontsize="small")
+    return fig
+
+
 def main():
     st.set_page_config(page_title="Emily's Retirement Planner", page_icon="💰", layout="wide")
     st.title("💼 Financial Advisor — NZ Retirement Planning Simulator")
     st.markdown(
-        "Use this dashboard to model retirement savings, assess risk outcomes, and visualize whether your corpus can support your post-retirement lifestyle."
+        "This interactive planner evaluates your savings path and retirement funding using realistic salary growth, contributions, investment allocation, and NZ Super support. It helps you understand how robust your corpus is against downside risk."
+    )
+    st.markdown("---")
+    st.markdown(
+        """
+### What this dashboard shows
+- **Projected retirement corpus:** how much retirement savings you may build by age 65.
+- **Risk bands & distribution:** the range of possible outcomes from conservative to optimistic.
+- **Post-retirement drawdown:** whether your savings can cover lifestyle spending plus NZ Super.
+- **Cost and cashflow view:** salary, expenses, and savings behavior across your working life.
+"""
+    )
+    st.markdown(
+        """
+### How to use the inputs
+- Increase **Starting Contribution %** and **Max Contribution %** to grow your corpus faster.
+- Adjust **Salary Hike** assumptions to reflect your career progression.
+- Use **Unforeseen Withdrawals** for planned home upgrades, education, or unexpected costs.
+- Set **Lifestyle Spending** and **NZ Super** to test whether retirement income covers your desired standard of living.
+"""
     )
     st.markdown("---")
 
@@ -256,34 +309,83 @@ def main():
             st.markdown("- **The retirement funding analysis indicates the simulated fund outflow is zero or not meaningful. Review lifestyle assumptions.**")
 
         st.markdown("---")
+        st.markdown(
+            "### What the charts are telling you"
+            "\n- The median path shows the most typical corpus build-up by age 65."
+            "\n- The shaded risk band shows downside and upside outcomes across 1,000 simulations."
+            "\n- If your corpus band stays above your expected retirement withdrawals, the plan looks more resilient."
+            "\n- Wide return distributions imply higher volatility, while narrow boxes suggest more stable funds."
+        )
+
         fig_corpus_band = plot_corpus_band(corpus_percentiles)
-        st.pyplot(fig_corpus_band)
-
         fig_dist, _, _, _ = plot_retirement_corpus_distribution(final_corpuses)
-        st.pyplot(fig_dist)
+        fig_alloc = plot_allocation_evolution(normalized_allocation_blocks)
+        fig_cashflow = plot_cashflow(df_pre)
 
-        fig_stack = plot_contribution_stack(df_pre)
-        st.pyplot(fig_stack)
+        top_left, top_right = st.columns(2)
+        with top_left:
+            st.subheader("📈 Retirement Corpus Risk Bands")
+            st.pyplot(fig_corpus_band)
+            st.markdown(
+                "This chart shows the expected range of fund values at each age. The dark line is the median scenario, while the shaded area captures the most likely downside and upside paths."
+            )
+        with top_right:
+            st.subheader("📊 Outcome Distribution")
+            st.pyplot(fig_dist)
+            st.markdown(
+                "The histogram shows the probability of different final corpus outcomes at retirement. A left-skewed tail means downside risk is possible, while the peak shows the most probable corpus range."
+            )
 
-        st.subheader("📉 Post-Retirement Drawdown")
-        fig_drawdown, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(df_post["Age"], df_post["Remaining Corpus"], color="#d1495b", linewidth=2.5)
-        ax.fill_between(df_post["Age"], df_post["Remaining Corpus"], 0, where=df_post["Remaining Corpus"] >= 0, color="#f7cac9", alpha=0.4)
-        ax.fill_between(df_post["Age"], df_post["Remaining Corpus"], 0, where=df_post["Remaining Corpus"] < 0, color="#c1121f", alpha=0.4)
-        ax.set_title("Post-Retirement Corpus Drawdown")
-        ax.set_xlabel("Age")
-        ax.set_ylabel("Remaining Corpus (NZD)")
-        ax.grid(True)
-        st.pyplot(fig_drawdown)
+        mid_left, mid_right = st.columns(2)
+        with mid_left:
+            st.subheader("📐 Portfolio Allocation Over Time")
+            st.pyplot(fig_alloc)
+            st.markdown(
+                "This plot shows how asset allocation weights evolve over the selected years. Use it to verify your risk posture and ensure the mix matches your retirement horizon."
+            )
+        with mid_right:
+            st.subheader("💰 Cashflow and Savings Insight")
+            st.pyplot(fig_cashflow)
+            st.markdown(
+                "Compare net salary, total contributions, and total expenses. If expenses grow faster than contributions, you may need to increase savings or lower lifestyle costs."
+            )
 
-        st.subheader("📈 Fund Returns Distribution")
-        return_columns = [col for col in df_pre.columns if "Return" in col and "FIF" not in col and "Return Rate" not in col]
-        fig_returns, ax_returns = plt.subplots(figsize=(10, 5))
-        sns.boxplot(data=df_pre[return_columns], ax=ax_returns, palette="Set3")
-        ax_returns.set_title("Annual Fund Return Distribution")
-        ax_returns.set_ylabel("Return (NZD)")
-        ax_returns.set_xticklabels(ax_returns.get_xticklabels(), rotation=30, ha="right")
-        st.pyplot(fig_returns)
+        bottom_left, bottom_right = st.columns(2)
+        with bottom_left:
+            st.subheader("📉 Post-Retirement Drawdown")
+            fig_drawdown, ax = plt.subplots(figsize=(10, 4))
+            ax.plot(df_post["Age"], df_post["Remaining Corpus"], color="#d1495b", linewidth=2.5)
+            ax.fill_between(df_post["Age"], df_post["Remaining Corpus"], 0, where=df_post["Remaining Corpus"] >= 0, color="#f7cac9", alpha=0.4)
+            ax.fill_between(df_post["Age"], df_post["Remaining Corpus"], 0, where=df_post["Remaining Corpus"] < 0, color="#c1121f", alpha=0.4)
+            ax.set_title("Post-Retirement Corpus Drawdown")
+            ax.set_xlabel("Age")
+            ax.set_ylabel("Remaining Corpus (NZD)")
+            ax.grid(True)
+            st.pyplot(fig_drawdown)
+            st.markdown(
+                "This chart shows how your retirement corpus moves after age 65. If the line crosses below zero, the assumed lifestyle spending exceeds available savings."
+            )
+        with bottom_right:
+            st.subheader("📈 Fund Return Volatility")
+            return_columns = [col for col in df_pre.columns if "Return" in col and "FIF" not in col and "Return Rate" not in col]
+            fig_returns, ax_returns = plt.subplots(figsize=(10, 4))
+            sns.boxplot(data=df_pre[return_columns], ax=ax_returns, palette="Set3")
+            ax_returns.set_title("Annual Fund Return Distribution")
+            ax_returns.set_ylabel("Return (NZD)")
+            ax_returns.set_xticklabels(ax_returns.get_xticklabels(), rotation=30, ha="right")
+            st.pyplot(fig_returns)
+            st.markdown(
+                "Asset boxes with greater height represent more volatile returns. Choose more stable funds if you need a smoother outcome, or more aggressive funds if you can tolerate higher risk."
+            )
+
+        st.markdown("---")
+        st.subheader("How to improve your retirement outcome")
+        st.markdown(
+            "- Increase contribution rates, especially early in your career, to build a stronger corpus."
+            "\n- Lower projected lifestyle spending or raise NZ Super assumptions to reduce drawdown risk."
+            "\n- Use the risk bands and distribution chart to see how much volatility you can accept."
+            "\n- Adjust fund allocation weights toward safer funds if you want lower variability in retirement outcomes."
+        )
 
         with st.expander("📋 Detailed Pre-Retirement Summary", expanded=False):
             st.dataframe(df_pre.reset_index(drop=True))

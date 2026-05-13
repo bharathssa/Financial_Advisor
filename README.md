@@ -66,6 +66,15 @@ This repo helps you:
 
 ---
 
+## 📘 How to interpret the visualizations
+
+- The **corpus risk band** chart shows the median retirement balance plus the range of likely outcomes.
+- The **distribution chart** explains how likely different final corpus values are, with the left tail showing the downside risk.
+- The **cashflow view** compares salary, contribution, and spending trends over your working years.
+- The **drawdown chart** shows whether your savings last through retirement and where shortfalls may appear.
+
+---
+
 ## 🧩 Project structure
 
 - `emily_pre_retirement.py` — simulates 36 years of income, expenses, contributions, and portfolio returns.
