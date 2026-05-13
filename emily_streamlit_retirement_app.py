@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from matplotlib.ticker import FuncFormatter
 from scipy.stats import norm
 import seaborn as sns
@@ -120,18 +121,45 @@ def plot_cashflow(df_pre):
 
 
 def plot_funding_gauge(score, corpus, required):
-    fig, ax = plt.subplots(figsize=(5, 2.8))
+    fig, ax = plt.subplots(figsize=(5, 3))
     ax.axis("off")
-    theta = np.linspace(0, np.pi, 100)
-    ax.plot(np.cos(theta), np.sin(theta), color="#d3d3d3", linewidth=18, solid_capstyle="round")
-    score_theta = np.pi * min(max(score / 100, 0), 1)
-    theta_fill = np.linspace(0, score_theta, 100)
-    ax.plot(np.cos(theta_fill), np.sin(theta_fill), color="#1b4f72", linewidth=18, solid_capstyle="round")
-    ax.plot([0, np.cos(score_theta)], [0, np.sin(score_theta)], color="#f39c12", linewidth=3)
-    ax.text(0, -0.12, f"Funding sufficiency: {score:.0f}%", ha="center", fontsize=13, fontweight="bold")
-    ax.text(0, -0.30, f"Corpus: {format_currency(corpus)} / Required: {format_currency(required)}", ha="center", fontsize=10)
-    ax.set_xlim(-1.1, 1.1)
-    ax.set_ylim(-0.4, 1.1)
+
+    segments = [
+        (180, 120, "#d9534f"),
+        (120, 60, "#f0ad4e"),
+        (60, 0, "#5cb85c"),
+    ]
+    for start, end, color in segments:
+        wedge = patches.Wedge((0, 0), 1.0, start, end, width=0.18, facecolor=color, edgecolor="none")
+        ax.add_patch(wedge)
+
+    outer = patches.Wedge((0, 0), 1.0, 180, 0, width=0.03, facecolor="none", edgecolor="#666", linewidth=1.5)
+    ax.add_patch(outer)
+
+    score_theta = 180 - np.clip(score, 0, 100) / 100 * 180
+    x = np.cos(np.radians(score_theta)) * 0.82
+    y = np.sin(np.radians(score_theta)) * 0.82
+    ax.plot([0, x], [0, y], color="#212121", linewidth=4, zorder=5)
+    hub = patches.Circle((0, 0), 0.06, facecolor="#212121", edgecolor="#ffffff", linewidth=2, zorder=6)
+    ax.add_patch(hub)
+
+    for pct in range(0, 101, 20):
+        angle = 180 - pct / 100 * 180
+        x0 = np.cos(np.radians(angle)) * 0.92
+        y0 = np.sin(np.radians(angle)) * 0.92
+        x1 = np.cos(np.radians(angle)) * 1.0
+        y1 = np.sin(np.radians(angle)) * 1.0
+        ax.plot([x0, x1], [y0, y1], color="#333", linewidth=2)
+        xl = np.cos(np.radians(angle)) * 1.12
+        yl = np.sin(np.radians(angle)) * 1.12
+        ax.text(xl, yl, f"{pct}%", ha="center", va="center", fontsize=9, color="#333")
+
+    ax.text(0, -0.18, f"Funding sufficiency", ha="center", fontsize=12, fontweight="bold")
+    ax.text(0, -0.34, f"{score:.0f}% funded", ha="center", fontsize=11, color="#333")
+    ax.text(0, -0.52, f"{format_currency(corpus)} / {format_currency(required)}", ha="center", fontsize=9, color="#555")
+
+    ax.set_xlim(-1.2, 1.2)
+    ax.set_ylim(-0.7, 1.05)
     return fig
 
 
