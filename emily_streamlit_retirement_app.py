@@ -126,9 +126,9 @@ def plot_funding_gauge(score, corpus, required):
     ax.axis("off")
 
     segments = [
-        (180, 120, "#d9534f"),
-        (120, 60, "#f0ad4e"),
-        (60, 0, "#5cb85c"),
+        (108, 180, "#d9534f"),  # 0-60%
+        (36, 108, "#f0ad4e"),   # 60-80%
+        (0, 36, "#5cb85c"),     # 80-100%
     ]
     for start, end, color in segments:
         wedge = patches.Wedge((0, 0), 1.0, start, end, width=0.18, facecolor=color, edgecolor="none")
@@ -140,8 +140,9 @@ def plot_funding_gauge(score, corpus, required):
     score_theta = 180 - np.clip(score, 0, 100) / 100 * 180
     x = np.cos(np.radians(score_theta)) * 0.82
     y = np.sin(np.radians(score_theta)) * 0.82
-    ax.plot([0, x], [0, y], color="#212121", linewidth=4, zorder=5)
-    hub = patches.Circle((0, 0), 0.06, facecolor="#212121", edgecolor="#ffffff", linewidth=2, zorder=6)
+    needle_color = "#d9534f" if score < 60 else "#f0ad4e" if score < 80 else "#5cb85c"
+    ax.plot([0, x], [0, y], color=needle_color, linewidth=4, zorder=5)
+    hub = patches.Circle((0, 0), 0.06, facecolor=needle_color, edgecolor="#ffffff", linewidth=2, zorder=6)
     ax.add_patch(hub)
 
     for pct in range(0, 101, 20):
