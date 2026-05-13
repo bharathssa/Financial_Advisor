@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter
 from scipy.stats import norm
 import seaborn as sns
 from emily_post_retirement import simulate_post_retirement
@@ -45,14 +46,21 @@ def build_aggregate_summary(df_list):
     return long_df, percentiles
 
 
+def million_formatter(x, pos):
+    if x >= 1e6:
+        return f"{x/1e6:.1f}M"
+    if x >= 1e3:
+        return f"{x/1e3:.0f}K"
+    return f"{x:.0f}"
+
+
 def plot_retirement_corpus_distribution(final_values):
     mu = np.mean(final_values)
-    std = np.std(final_values)
     p5 = np.percentile(final_values, 5)
     p95 = np.percentile(final_values, 95)
 
     x = np.linspace(min(final_values), max(final_values), 200)
-    pdf = norm.pdf(x, mu, std)
+    pdf = norm.pdf(x, mu, np.std(final_values))
 
     fig, ax = plt.subplots(figsize=(10, 5))
     sns.histplot(final_values, kde=False, stat="density", bins=30, color="#6fa8dc", ax=ax)
@@ -63,8 +71,9 @@ def plot_retirement_corpus_distribution(final_values):
     ax.axvline(p5, color="#a6acaf", linestyle="--", linewidth=1.5, label=f"5th percentile: {format_currency(p5)}")
     ax.axvline(p95, color="#a6acaf", linestyle="--", linewidth=1.5, label=f"95th percentile: {format_currency(p95)}")
     ax.set_title("Distribution of Final Retirement Corpus")
-    ax.set_xlabel("Corpus at Retirement (NZD)")
+    ax.set_xlabel("Corpus at Retirement (Millions NZD)")
     ax.set_ylabel("Density")
+    ax.xaxis.set_major_formatter(FuncFormatter(million_formatter))
     ax.legend(loc="upper left")
     return fig, mu, p5, p95
 
@@ -75,7 +84,8 @@ def plot_corpus_band(percentiles):
     ax.plot(percentiles["Age"], percentiles["median"], color="#114b8d", linewidth=2.5, label="Median corpus")
     ax.set_title("Projected Retirement Corpus with Risk Bands")
     ax.set_xlabel("Age")
-    ax.set_ylabel("Projected Fund Value (NZD)")
+    ax.set_ylabel("Projected Fund Value (Millions NZD)")
+    ax.yaxis.set_major_formatter(FuncFormatter(million_formatter))
     ax.legend()
     return fig
 
@@ -100,10 +110,28 @@ def plot_cashflow(df_pre):
     ax.plot(df["Age"], df["Net Salary"], label="Net Salary", color="#2a6f97", linewidth=2)
     ax.plot(df["Age"], df["Total Contribution"], label="Total Contribution", color="#ff8c42", linewidth=2)
     ax.plot(df["Age"], df["Total Expenses"], label="Total Expenses", color="#8c2d04", linewidth=2)
-    ax.set_title("Net Cashflow, Savings and Expenses")
+    ax.plot(df["Age"], df["Adjusted Fund Value"], label="Portfolio Value", color="#1b4f72", linewidth=2, linestyle="--")
+    ax.set_title("Net Cashflow, Savings, Expenses and Portfolio Value")
     ax.set_xlabel("Age")
     ax.set_ylabel("NZD")
     ax.legend()
+    ax.yaxis.set_major_formatter(FuncFormatter(million_formatter))
+    return fig
+
+
+def plot_funding_gauge(score, corpus, required):
+    fig, ax = plt.subplots(figsize=(5, 2.8))
+    ax.axis("off")
+    theta = np.linspace(0, np.pi, 100)
+    ax.plot(np.cos(theta), np.sin(theta), color="#d3d3d3", linewidth=18, solid_capstyle="round")
+    score_theta = np.pi * min(max(score / 100, 0), 1)
+    theta_fill = np.linspace(0, score_theta, 100)
+    ax.plot(np.cos(theta_fill), np.sin(theta_fill), color="#1b4f72", linewidth=18, solid_capstyle="round")
+    ax.plot([0, np.cos(score_theta)], [0, np.sin(score_theta)], color="#f39c12", linewidth=3)
+    ax.text(0, -0.12, f"Funding sufficiency: {score:.0f}%", ha="center", fontsize=13, fontweight="bold")
+    ax.text(0, -0.30, f"Corpus: {format_currency(corpus)} / Required: {format_currency(required)}", ha="center", fontsize=10)
+    ax.set_xlim(-1.1, 1.1)
+    ax.set_ylim(-0.4, 1.1)
     return fig
 
 
@@ -283,19 +311,21 @@ def main():
         sufficiency_score = int(min(100, 100 * corpus_at_retirement / total_fund_withdrawal)) if total_fund_withdrawal > 0 else 100
         funding_status = "Sufficient" if corpus_at_retirement >= total_fund_withdrawal else "At Risk"
 
+        required_fund = total_fund_withdrawal
         st.subheader("📊 Retirement Summary")
-        m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric("Mean Corpus at 65", format_currency(mean_corpus))
-        m2.metric("Median Corpus at 65", format_currency(median_corpus))
-        m3.metric("5th Percentile Corpus", format_currency(p5))
-        m4.metric("95th Percentile Corpus", format_currency(p95))
-        m5.metric("Funding Status", funding_status)
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("Mean Corpus at 65", format_currency(mean_corpus))
+        c2.metric("Median Corpus at 65", format_currency(median_corpus))
+        c3.metric("Required Retirement Fund", format_currency(required_fund))
+        c4.metric("Funding Status", funding_status)
+        c5.metric("Retirement Sufficiency", f"{sufficiency_score}%")
 
         st.markdown("---")
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         c1.metric("Estimated Total Contributions", format_currency(total_contributions))
         c2.metric("Expected Corpus at Retirement", format_currency(corpus_at_retirement))
-        c3.metric("Retirement Sufficiency", f"{sufficiency_score}%")
+        c3.metric("Required Fund", format_currency(required_fund))
+        c4.metric("Shortfall Probability", f"{shortfall_probability:.1f}%")
 
         if total_fund_withdrawal > 0:
             st.markdown(
@@ -307,6 +337,9 @@ def main():
             )
         else:
             st.markdown("- **The retirement funding analysis indicates the simulated fund outflow is zero or not meaningful. Review lifestyle assumptions.**")
+
+        gauge_fig = plot_funding_gauge(sufficiency_score, corpus_at_retirement, required_fund)
+        st.pyplot(gauge_fig)
 
         st.markdown("---")
         st.markdown(
@@ -347,7 +380,7 @@ def main():
             st.subheader("💰 Cashflow and Savings Insight")
             st.pyplot(fig_cashflow)
             st.markdown(
-                "Compare net salary, total contributions, and total expenses. If expenses grow faster than contributions, you may need to increase savings or lower lifestyle costs."
+                "Compare net salary, total contributions, portfolio value, and total expenses. The portfolio value line shows how invested capital grows compared to spending."
             )
 
         bottom_left, bottom_right = st.columns(2)
@@ -379,14 +412,46 @@ def main():
             )
 
         st.markdown("---")
-        st.subheader("How to improve your retirement outcome")
-        st.markdown(
-            "- Increase contribution rates, especially early in your career, to build a stronger corpus."
-            "\n- Lower projected lifestyle spending or raise NZ Super assumptions to reduce drawdown risk."
-            "\n- Use the risk bands and distribution chart to see how much volatility you can accept."
-            "\n- Adjust fund allocation weights toward safer funds if you want lower variability in retirement outcomes."
+        st.subheader("Pre-Retirement Summary")
+        pre_comments = []
+        home_purchase = df_pre.loc[df_pre["Owns Home"] & ~df_pre["Owns Home"].shift(fill_value=False)]
+        if not home_purchase.empty:
+            home_age = int(home_purchase["Age"].iloc[0])
+            pre_comments.append(f"Home purchase transitions at age {home_age}, which may increase expenses and reduce your available savings capacity.")
+        if (df_pre["Total Spent"] > df_pre["Total Contribution"]).any():
+            years_over = df_pre.loc[df_pre["Total Spent"] > df_pre["Total Contribution"], "Age"].tolist()
+            pre_comments.append(
+                f"Expenses exceed contributions in {len(years_over)} year(s); this suggests you should either raise contributions or lower lifestyle costs."
+            )
+        expense_jump_idx = df_pre["Total Spent"].diff().idxmax()
+        expense_jump_age = int(df_pre.loc[expense_jump_idx, "Age"])
+        pre_comments.append(
+            f"The largest step-up in total spending occurs around age {expense_jump_age}. Review large financial commitments at that stage."
         )
+        if not pre_comments:
+            pre_comments.append("Pre-retirement cashflow remains balanced, but keep monitoring contribution and expense growth.")
+        for comment in pre_comments:
+            st.markdown(f"- {comment}")
 
+        st.subheader("Post-Retirement Summary")
+        if df_post["Remaining Corpus"].min() < 0:
+            runout_age = int(df_post.loc[df_post["Remaining Corpus"] < 0, "Age"].iloc[0])
+            st.markdown(
+                f"- The retirement corpus falls below zero by age {runout_age}, indicating a funding gap in this plan."
+            )
+            st.markdown(
+                "- Consider increasing pre-retirement savings, lowering post-retirement lifestyle spending, or improving assumed portfolio returns."
+            )
+        else:
+            st.markdown(
+                "- The corpus remains positive through the selected life expectancy, meaning the current plan is sufficient under modeled assumptions."
+            )
+        if total_fund_withdrawal > corpus_at_retirement:
+            st.markdown(
+                "- The required withdrawal amount exceeds expected corpus, so the plan is at risk and should be adjusted."
+            )
+
+        st.markdown("---")
         with st.expander("📋 Detailed Pre-Retirement Summary", expanded=False):
             st.dataframe(df_pre.reset_index(drop=True))
 
