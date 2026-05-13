@@ -19,9 +19,9 @@ This repo helps you:
 
 ## ✨ What’s included
 
-- `emily_streamlit_retirement_app.py` — interactive Streamlit dashboard
-- `emily_pre_retirement.py` — pre-retirement accumulation engine
-- `emily_post_retirement.py` — post-retirement drawdown engine
+- `streamlit_retirement_app.py` — interactive Streamlit dashboard
+- `pre_retirement.py` — pre-retirement accumulation engine
+- `post_retirement.py` — post-retirement drawdown engine
 - `CSV Files/` — sample data storage
 - `images/` — illustration screenshots used in README
 - `requirements.txt` — Python dependencies
@@ -43,7 +43,7 @@ This repo helps you:
 
 3. Run the Streamlit app:
    ```bash
-   streamlit run emily_streamlit_retirement_app.py
+   streamlit run streamlit_retirement_app.py
    ```
 
 ---
@@ -77,9 +77,9 @@ This repo helps you:
 
 ## 🧩 Project structure
 
-- `emily_pre_retirement.py` — simulates 36 years of income, expenses, contributions, and portfolio returns.
-- `emily_post_retirement.py` — simulates retirement drawdown from age 66 to life expectancy.
-- `emily_streamlit_retirement_app.py` — builds the Streamlit interface and visual summaries.
+- `pre_retirement.py` — simulates 36 years of income, expenses, contributions, and portfolio returns.
+- `post_retirement.py` — simulates retirement drawdown from age 66 to life expectancy.
+- `streamlit_retirement_app.py` — builds the Streamlit interface and visual summaries.
 
 ---
 

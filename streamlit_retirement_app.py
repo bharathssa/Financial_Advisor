@@ -6,8 +6,8 @@ import matplotlib.patches as patches
 from matplotlib.ticker import FuncFormatter
 from scipy.stats import norm
 import seaborn as sns
-from emily_post_retirement import simulate_post_retirement
-from emily_pre_retirement import simulate_pre_retirement
+from post_retirement import simulate_post_retirement
+from pre_retirement import simulate_pre_retirement
 
 sns.set_style("whitegrid")
 
@@ -75,7 +75,7 @@ def plot_retirement_corpus_distribution(final_values):
     ax.set_xlabel("Corpus at Retirement (Millions NZD)")
     ax.set_ylabel("Density")
     ax.xaxis.set_major_formatter(FuncFormatter(million_formatter))
-    ax.legend(loc="upper left")
+    ax.legend(loc="upper right", frameon=False)
     return fig, mu, p5, p95
 
 
@@ -185,7 +185,7 @@ def plot_allocation_evolution(normalized_blocks):
 
 
 def main():
-    st.set_page_config(page_title="Emily's Retirement Planner", page_icon="💰", layout="wide")
+    st.set_page_config(page_title="Retirement Planner", page_icon="💰", layout="wide")
     st.title("💼 Financial Advisor — NZ Retirement Planning Simulator")
     st.markdown(
         "This interactive planner evaluates your savings path and retirement funding using realistic salary growth, contributions, investment allocation, and NZ Super support. It helps you understand how robust your corpus is against downside risk."
@@ -412,7 +412,8 @@ def main():
             st.subheader("💰 Cashflow and Savings Insight")
             st.pyplot(fig_cashflow)
             st.markdown(
-                "Compare net salary, total contributions, portfolio value, and total expenses. The portfolio value line shows how invested capital grows compared to spending."
+                "Compare net salary, total contributions, portfolio value, and total expenses. The portfolio value line shows how invested capital grows compared to spending. "
+                "A higher portfolio value relative to annual expenses is positive, but the retirement sufficiency score measures whether the projected age-65 corpus can cover the full modeled retirement withdrawal need."
             )
 
         bottom_left, bottom_right = st.columns(2)

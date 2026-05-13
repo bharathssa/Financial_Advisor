@@ -48,4 +48,4 @@ COPY . .
 EXPOSE 8501
 
 # Run the application.
-CMD python3 -m streamlit run emily_streamlit_retirement_app.py
+CMD python3 -m streamlit run streamlit_retirement_app.py
